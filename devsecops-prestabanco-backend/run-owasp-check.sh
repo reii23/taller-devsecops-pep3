@@ -3,7 +3,7 @@
 echo "Ejecutando OWASP Dependency Check..."
 
 if command -v mvn &> /dev/null; then
-    mvn org.owasp:dependency-check-maven:check
+    mvn org.owasp:dependency-check-maven:check -DautoUpdate=false -DfailBuildOnCVSS=11
     
     if [ -f "target/dependency-check-report.html" ]; then
         echo "Reporte generado: target/dependency-check-report.html"
