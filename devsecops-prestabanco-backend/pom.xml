@@ -119,13 +119,13 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.9</version>
+                <version>8.4.3</version>
                 <configuration>
                     <formats>
                         <format>HTML</format>
                         <format>JSON</format>
                     </formats>
-                    <autoUpdate>false</autoUpdate>
+                    <autoUpdate>true</autoUpdate>
                     <cveValidForHours>24</cveValidForHours>
                     <failBuildOnCVSS>11</failBuildOnCVSS>
                     <skipNvdApiKey>true</skipNvdApiKey>
