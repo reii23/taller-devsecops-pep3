@@ -43,26 +43,34 @@ pipeline {
         }
         stage("GitLeaks - Secret Detection") {
             steps {
-                script {
-                    sh '''
-                        if ! command -v gitleaks &> /dev/null; then
-                            echo "Installing GitLeaks..."
-                            curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /tmp
-                            cp /tmp/gitleaks ./gitleaks
-                            chmod +x ./gitleaks
-                        fi
-                    '''
-                    
-                    sh '''
-                        echo "Running GitLeaks secret detection..."
-                        if command -v gitleaks &> /dev/null; then
-                            gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
-                            gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
-                        else
-                            ./gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
-                            ./gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
-                        fi
-                    '''
+                dir('devsecops-prestabanco-backend') {
+                    script {
+                        sh '''
+                            if ! command -v gitleaks &> /dev/null; then
+                                echo "Installing GitLeaks..."
+                                curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /tmp
+                                cp /tmp/gitleaks ./gitleaks
+                                chmod +x ./gitleaks
+                                echo "GitLeaks installed locally"
+                            else
+                                echo "GitLeaks already available in PATH"
+                            fi
+                        '''
+                        
+                        sh '''
+                            echo "Running GitLeaks secret detection..."
+                            GITLEAKS_CMD="gitleaks"
+                            if [ ! -x "$(command -v gitleaks)" ]; then
+                                GITLEAKS_CMD="./gitleaks"
+                            fi
+                            
+                            echo "Using GitLeaks command: $GITLEAKS_CMD"
+                            $GITLEAKS_CMD detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
+                            $GITLEAKS_CMD detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
+                            
+                            echo "GitLeaks scan completed"
+                            ls -la gitleaks-report.* || echo "No reports generated"
+                        '''
                     
                     archiveArtifacts artifacts: 'gitleaks-report.*', allowEmptyArchive: true
                     
