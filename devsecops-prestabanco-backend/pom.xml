@@ -125,6 +125,10 @@
                         <format>HTML</format>
                         <format>JSON</format>
                     </formats>
+                    <autoUpdate>false</autoUpdate>
+                    <cveValidForHours>24</cveValidForHours>
+                    <failBuildOnCVSS>11</failBuildOnCVSS>
+                    <skipNvdApiKey>true</skipNvdApiKey>
                 </configuration>
             </plugin>
 		</plugins>
