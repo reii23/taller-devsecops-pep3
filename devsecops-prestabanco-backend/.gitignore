@@ -35,3 +35,7 @@ build/
 
 ### OWASP Reports ###
 dependency-check-report.*
+
+### GitLeaks Reports ###
+gitleaks-report.*
+security-reports/
