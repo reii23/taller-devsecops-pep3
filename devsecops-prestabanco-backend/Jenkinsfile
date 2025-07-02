@@ -54,7 +54,9 @@ pipeline {
     }
     post {
         success {
-            archiveArtifacts artifacts: 'target/*.jar', followSymlinks: false, onlyIfSuccessful: true
+            dir('devsecops-prestabanco-backend') {
+                archiveArtifacts artifacts: 'target/*.jar', followSymlinks: false, onlyIfSuccessful: true
+            }
         }
     }
 }
