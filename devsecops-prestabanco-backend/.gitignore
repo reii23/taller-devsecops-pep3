@@ -36,4 +36,5 @@ build/
 ### Security Reports ###
 dependency-check-report.*
 gitleaks-report.*
+zap-reports/
 security-reports/

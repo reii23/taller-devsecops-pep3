@@ -80,6 +80,36 @@ pipeline {
                 }
             }
         }
+        stage("OWASP ZAP Security Scan") {
+            steps {
+                dir('devsecops-prestabanco-backend') {
+                    script {
+                        echo "Iniciando análisis DAST con OWASP ZAP..."
+                        sh 'mkdir -p zap-reports'
+                        sh '''
+                            docker stop owasp-zap || true
+                            docker rm owasp-zap || true
+                            docker run --name owasp-zap -v $(pwd):/zap/wrk/:rw \
+                                --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+                                -t http://host.docker.internal:8080 \
+                                -J zap-baseline-report.json \
+                                -r zap-baseline-report.html \
+                                -x zap-baseline-report.xml || true
+                            mv zap-baseline-report.* zap-reports/ || true
+                        '''
+                        sh '''
+                            echo "Detectando endpoints web..."
+                            grep -r -E "(@RequestMapping|@GetMapping|@PostMapping|@PutMapping|@DeleteMapping)" \
+                                --include="*.java" . > zap-reports/endpoints.txt || true
+                            
+                            echo "Endpoints encontrados: $(wc -l < zap-reports/endpoints.txt)"
+                        '''
+                        archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
+                        echo "Análisis OWASP ZAP completado"
+                    }
+                }
+            }
+        }
         stage("Deploy image"){
             when {
                 branch "main"
