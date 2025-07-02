@@ -33,9 +33,7 @@ build/
 ### VS Code ###
 .vscode/
 
-### OWASP Reports ###
+### Security Reports ###
 dependency-check-report.*
-
-### GitLeaks Reports ###
 gitleaks-report.*
 security-reports/

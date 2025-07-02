@@ -15,6 +15,10 @@ import java.util.List;
 @Service
 public class UserService {
 
+    // test secretos añadidos a proposito
+    private static final String AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
+    private static final String DB_PASSWORD = "SuperSecret123!";
+
     @Autowired
     UserRepository userRepository;
     @Autowired
