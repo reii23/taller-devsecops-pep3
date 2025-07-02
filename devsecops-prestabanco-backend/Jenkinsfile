@@ -27,7 +27,7 @@ pipeline {
         stage("OWASP Dependency Check") {
             steps {
                 dir('devsecops-prestabanco-backend') {
-                    sh "mvn org.owasp:dependency-check-maven:8.4.3:check -DfailBuildOnCVSS=11"
+                    sh "mvn org.owasp:dependency-check-maven:8.4.3:check -DfailBuildOnCVSS=11 -DautoUpdate=true"
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
