@@ -21,7 +21,7 @@ pipeline {
         }
         stage("OWASP Dependency Check") {
             steps {
-                sh "mvn org.owasp:dependency-check-maven:check -DautoUpdate=false -DfailBuildOnCVSS=11"
+                sh "mvn org.owasp:dependency-check-maven:8.4.3:check -DfailBuildOnCVSS=11"
                 publishHTML([
                     allowMissing: true,
                     alwaysLinkToLastBuild: true,
