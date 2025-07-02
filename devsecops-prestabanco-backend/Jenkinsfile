@@ -48,14 +48,20 @@ pipeline {
                         if ! command -v gitleaks &> /dev/null; then
                             echo "Installing GitLeaks..."
                             curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /tmp
-                            sudo mv /tmp/gitleaks /usr/local/bin/
+                            cp /tmp/gitleaks ./gitleaks
+                            chmod +x ./gitleaks
                         fi
                     '''
                     
                     sh '''
                         echo "Running GitLeaks secret detection..."
-                        gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
-                        gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
+                        if command -v gitleaks &> /dev/null; then
+                            gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
+                            gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
+                        else
+                            ./gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
+                            ./gitleaks detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
+                        fi
                     '''
                     
                     archiveArtifacts artifacts: 'gitleaks-report.*', allowEmptyArchive: true
