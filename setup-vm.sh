@@ -12,10 +12,10 @@ echo "Configurando permisos del socket Docker..."
 sudo chmod 666 /var/run/docker.sock
 
 echo "Deteniendo contenedores actuales..."
-docker-compose down 2>/dev/null || true
+docker compose down 2>/dev/null || true
 
 echo "Levantando Jenkins y SonarQube..."
-docker-compose up -d
+docker compose up -d
 
 echo "Esperando a que Jenkins este listo..."
 sleep 30
