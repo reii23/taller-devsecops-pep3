@@ -89,9 +89,9 @@ pipeline {
                         sh '''
                             docker stop owasp-zap || true
                             docker rm owasp-zap || true
-                            docker run --name owasp-zap -v $(pwd):/zap/wrk/:rw \
+                            docker run --name owasp-zap --network prestabanco-network -v $(pwd):/zap/wrk/:rw \
                                 --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-                                -t http://host.docker.internal:8080 \
+                                -t http://prestabanco-backend:8090 \
                                 -J zap-baseline-report.json \
                                 -r zap-baseline-report.html \
                                 -x zap-baseline-report.xml || true

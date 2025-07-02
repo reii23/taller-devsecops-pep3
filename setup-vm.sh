@@ -14,8 +14,13 @@ sudo chmod 666 /var/run/docker.sock
 echo "Deteniendo contenedores actuales..."
 docker compose down 2>/dev/null || true
 
+echo "Construyendo backend..."
+cd devsecops-prestabanco-backend
+./mvnw clean package -DskipTests
+cd ..
+
 echo "Levantando Jenkins, SonarQube, Backend y PostgreSQL..."
-docker compose up -d jenkins sonarqube backend postgres
+docker compose up -d jenkins sonarqube postgres backend
 
 echo "Esperando a que Jenkins este listo..."
 sleep 30
@@ -31,12 +36,12 @@ if docker exec jenkins docker --version; then
     echo ""
     echo "Docker-in-Docker configurado correctamente"
     echo "Acceso Jenkins: http://$(hostname -I | awk '{print $1}'):8082"
-    echo "Acceso Backend: http://$(hostname -I | awk '{print $1}'):8080"
+    echo "Acceso Backend: http://$(hostname -I | awk '{print $1}'):8090"
     echo "Acceso SonarQube: http://$(hostname -I | awk '{print $1}'):9000"
     echo "Contrasena Jenkins: docker logs jenkins"
     echo ""
     echo "Verificando backend..."
-    if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+    if curl -s http://localhost:8090/health > /dev/null 2>&1; then
         echo "Backend corriendo correctamente - OWASP ZAP podra ejecutar analisis DAST"
     else
         echo "Backend aun iniciando - esperar unos minutos para OWASP ZAP"

@@ -32,11 +32,44 @@ services:
     networks:
       - prestabanco-network
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_DB=PrestaBanco
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - prestabanco-network
+
+  backend:
+    build:
+      context: ./devsecops-prestabanco-backend
+      dockerfile: Dockerfile
+    container_name: prestabanco-backend
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/PrestaBanco
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123admin
+    depends_on:
+      - postgres
+    networks:
+      - prestabanco-network
+
 volumes:
   jenkins_home:
   sonarqube_data:
   sonarqube_logs:
   sonarqube_extensions:
+  postgres_data:
 
 networks:
   prestabanco-network:
