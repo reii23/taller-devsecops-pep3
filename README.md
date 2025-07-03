@@ -7,12 +7,11 @@ Pipeline de integración continua con herramientas de seguridad automatizadas.
 | **OWASP Dependency Check** | Análisis de vulnerabilidades en dependencias | Implementado |
 | **GitLeaks** | Detección de secretos en código | Implementado |
 | **SonarQube** | Análisis estático de calidad de código | Implementado |
+| **OWASP ZAP** | Análisis dinámico | Implementado |
 
-
-## 🚀 Pipeline Actual
 
 ```
-Build → Test → OWASP Check → Static Analysis → GitLeaks → Deploy
+Build → Test → OWASP Check → Static Analysis → GitLeaks → OWASP ZAP Security Scan →  Deploy 
 ```
 
 ### Etapas del Pipeline:
@@ -21,7 +20,8 @@ Build → Test → OWASP Check → Static Analysis → GitLeaks → Deploy
 3. **OWASP Dependency Check**: Escaneo de vulnerabilidades
 4. **Static Analysis**: SonarQube
 5. **GitLeaks Secret Scan**: Detección de secretos
-6. **Deploy**: Construcción de imagen Docker
+6. **OWASP ZAP Security Scan**: Análisis de Dinámico
+7. **Deploy**: Construcción de imagen Docker
 
 ## 📋 Configuración Actual
 
