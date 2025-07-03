@@ -104,34 +104,14 @@ pipeline {
                             
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
                                 echo "Backend accesible, ejecutando ZAP Baseline Scan..."
+                                echo "=== VULNERABILIDADES ENCONTRADAS ==="
                                 
                                 docker run --rm $NETWORK_FLAG \
-                                    -v $(pwd)/zap-reports:/zap/wrk:rw \
                                     --user root \
                                     ghcr.io/zaproxy/zaproxy:stable \
-                                    zap-baseline.py -t $TARGET_URL \
-                                    -J /zap/wrk/baseline-report.json \
-                                    -r /zap/wrk/baseline-report.html \
-                                    -x /zap/wrk/baseline-report.xml \
-                                    -I || true
+                                    zap-baseline.py -t $TARGET_URL || true
                                 
-                                if [ -f "zap-reports/baseline-report.html" ]; then
-                                    echo "Reporte HTML generado exitosamente"
-                                else
-                                    echo "ERROR: No se generó el reporte HTML"
-                                fi
-                                
-                                if [ -f "zap-reports/baseline-report.json" ]; then
-                                    echo "Reporte JSON generado exitosamente"
-                                else
-                                    echo "ERROR: No se generó el reporte JSON"
-                                fi
-                                
-                                if [ -f "zap-reports/baseline-report.xml" ]; then
-                                    echo "Reporte XML generado exitosamente"
-                                else
-                                    echo "ERROR: No se generó el reporte XML"
-                                fi
+                                echo "=== FIN ANÁLISIS OWASP ZAP ==="
                                 
                             else
                                 echo "Backend no accesible en $TARGET_URL"
@@ -142,8 +122,7 @@ pipeline {
                             grep -r -E "(@RequestMapping|@GetMapping|@PostMapping|@PutMapping|@DeleteMapping)" \
                                 --include="*.java" . > zap-reports/endpoints.txt || true
                             
-                            echo "Archivos en zap-reports:"
-                            ls -la zap-reports/ || true
+                            echo "Endpoints encontrados: $(wc -l < zap-reports/endpoints.txt)"
                         '''
                         
                         archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
