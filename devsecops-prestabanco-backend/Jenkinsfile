@@ -125,10 +125,10 @@ pipeline {
                                         --rm ghcr.io/zaproxy/zaproxy:stable bash -c "
                                             zap-baseline.py -t $TARGET_URL -J baseline-report.json -r baseline-report.html -x baseline-report.xml || true
                                             
-                                            find /home/zap -name 'baseline-report.*' -exec cp {} /home/zap/reports/ \;
-                                            find /home/zap -name '*report*.html' -exec cp {} /home/zap/reports/ \;
-                                            find /home/zap -name '*report*.json' -exec cp {} /home/zap/reports/ \;
-                                            find /home/zap -name '*report*.xml' -exec cp {} /home/zap/reports/ \;
+                                            find /home/zap -name 'baseline-report.*' -exec cp {} /home/zap/reports/ \\;
+                                            find /home/zap -name '*report*.html' -exec cp {} /home/zap/reports/ \\;
+                                            find /home/zap -name '*report*.json' -exec cp {} /home/zap/reports/ \\;
+                                            find /home/zap -name '*report*.xml' -exec cp {} /home/zap/reports/ \\;
                                             
                                             echo '=== Archivos en /home/zap/reports después de copia ==='
                                             ls -la /home/zap/reports/
