@@ -102,15 +102,26 @@ pipeline {
                             fi
                             
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
-                                # Ejecutar ZAP directamente en el directorio de trabajo
                                 docker run --name owasp-zap $NETWORK_FLAG \
                                     -v $(pwd)/zap-reports:/zap/wrk/:rw \
-                                    --user $(id -u):$(id -g) \
+                                    --user root \
                                     --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
                                     -t "$TARGET_URL" \
-                                    -J zap-baseline-report.json \
-                                    -r zap-baseline-report.html \
-                                    -x zap-baseline-report.xml || true
+                                    -J /zap/wrk/zap-baseline-report.json \
+                                    -r /zap/wrk/zap-baseline-report.html \
+                                    -x /zap/wrk/zap-baseline-report.xml || true
+                                
+                                ls -la zap-reports/
+                                
+                                if [ ! -f zap-reports/zap-baseline-report.html ]; then
+                                    echo "Archivo HTML no encontrado" > zap-reports/zap-missing-html.txt
+                                fi
+                                if [ ! -f zap-reports/zap-baseline-report.json ]; then
+                                    echo "Archivo JSON no encontrado" > zap-reports/zap-missing-json.txt
+                                fi
+                                if [ ! -f zap-reports/zap-baseline-report.xml ]; then
+                                    echo "Archivo XML no encontrado" > zap-reports/zap-missing-xml.txt
+                                fi
                             else
                                 echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
                             fi
