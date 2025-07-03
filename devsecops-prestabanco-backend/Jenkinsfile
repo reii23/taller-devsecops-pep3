@@ -89,13 +89,30 @@ pipeline {
                         sh '''
                             docker stop owasp-zap || true
                             docker rm owasp-zap || true
-                            docker run --name owasp-zap --network prestabanco-network -v $(pwd):/zap/wrk/:rw \
-                                --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-                                -t http://prestabanco-backend:8090 \
-                                -J zap-baseline-report.json \
-                                -r zap-baseline-report.html \
-                                -x zap-baseline-report.xml || true
-                            mv zap-baseline-report.* zap-reports/ || true
+                            
+                            if docker network ls | grep -q "prestabanco-network"; then
+                                NETWORK_NAME=$(docker network ls | grep prestabanco-network | awk '{print $2}')
+                                NETWORK_FLAG="--network $NETWORK_NAME"
+                                TARGET_URL="http://prestabanco-backend:8090"
+                            elif docker ps --format "table {{.Names}}" | grep -q prestabanco-backend; then
+                                BACKEND_IP=$(docker inspect prestabanco-backend --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+                                TARGET_URL="http://$BACKEND_IP:8090"
+                            else
+                                TARGET_URL="http://172.17.0.1:8090"
+                            fi
+                            
+                            if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
+                                docker run --name owasp-zap $NETWORK_FLAG -v $(pwd):/zap/wrk/:rw \
+                                    --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+                                    -t "$TARGET_URL" \
+                                    -J zap-baseline-report.json \
+                                    -r zap-baseline-report.html \
+                                    -x zap-baseline-report.xml || true
+                            else
+                                echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
+                            fi
+                            
+                            mv zap-baseline-report.* zap-reports/ 2>/dev/null || true
                         '''
                         sh '''
                             echo "Detectando endpoints web..."
