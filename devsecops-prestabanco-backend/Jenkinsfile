@@ -87,8 +87,7 @@ pipeline {
                         echo "Iniciando análisis DAST con OWASP ZAP..."
                         sh 'mkdir -p zap-reports'
                         sh '''
-                            docker stop owasp-zap || true
-                            docker rm owasp-zap || true
+                            rm -f zap-reports/*
                             
                             if docker network ls | grep -q "prestabanco-network"; then
                                 NETWORK_NAME=$(docker network ls | grep prestabanco-network | awk '{print $2}')
@@ -101,36 +100,52 @@ pipeline {
                                 TARGET_URL="http://172.17.0.1:8090"
                             fi
                             
+                            echo "Target URL: $TARGET_URL"
+                            
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
-                                rm -f zap-reports/baseline-report.* zap-reports/zap-*.html zap-reports/zap-*.json zap-reports/zap-*.xml
+                                echo "Backend accesible, ejecutando ZAP Baseline Scan..."
                                 
-                                echo "Ejecutando ZAP Baseline Scan"
-                                docker run --name owasp-zap-direct $NETWORK_FLAG \
-                                    -v $(pwd)/zap-reports:/home/zap/reports:rw \
+                                docker run --rm $NETWORK_FLAG \
+                                    -v $(pwd)/zap-reports:/zap/wrk:rw \
                                     --user root \
-                                    --rm ghcr.io/zaproxy/zaproxy:stable bash -c "
-                                        cd /home/zap/reports
-                                        zap-baseline.py -t $TARGET_URL -J baseline-report.json -r baseline-report.html -x baseline-report.xml || true
-                                        echo 'ZAP Scan completado' > zap-status.txt
-                                        date >> zap-status.txt
-                                    " || true
+                                    ghcr.io/zaproxy/zaproxy:stable \
+                                    zap-baseline.py -t $TARGET_URL \
+                                    -J baseline-report.json \
+                                    -r baseline-report.html \
+                                    -x baseline-report.xml \
+                                    -I || true
                                 
-                                find zap-reports/ -type f -ls
+                                if [ -f "zap-reports/baseline-report.html" ]; then
+                                    echo "Reporte HTML generado exitosamente"
+                                else
+                                    echo "ERROR: No se generó el reporte HTML"
+                                fi
                                 
-                                echo "Análisis OWASP ZAP finalizado - $(date)" >> zap-reports/zap-status.txt
-                                echo "Target URL: $TARGET_URL" >> zap-reports/zap-status.txt
-                                ls -la zap-reports/ >> zap-reports/zap-status.txt
+                                if [ -f "zap-reports/baseline-report.json" ]; then
+                                    echo "Reporte JSON generado exitosamente"
+                                else
+                                    echo "ERROR: No se generó el reporte JSON"
+                                fi
+                                
+                                if [ -f "zap-reports/baseline-report.xml" ]; then
+                                    echo "Reporte XML generado exitosamente"
+                                else
+                                    echo "ERROR: No se generó el reporte XML"
+                                fi
+                                
                             else
+                                echo "Backend no accesible en $TARGET_URL"
                                 echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
                             fi
-                        '''
-                        sh '''
+                            
                             echo "Detectando endpoints web..."
                             grep -r -E "(@RequestMapping|@GetMapping|@PostMapping|@PutMapping|@DeleteMapping)" \
                                 --include="*.java" . > zap-reports/endpoints.txt || true
                             
-                            echo "Endpoints encontrados: $(wc -l < zap-reports/endpoints.txt)"
+                            echo "Archivos en zap-reports:"
+                            ls -la zap-reports/ || true
                         '''
+                        
                         archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
                         echo "Análisis OWASP ZAP completado"
                     }
