@@ -107,9 +107,9 @@ pipeline {
                                     --user root \
                                     --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
                                     -t "$TARGET_URL" \
-                                    -J /zap/wrk/zap-baseline-report.json \
-                                    -r /zap/wrk/zap-baseline-report.html \
-                                    -x /zap/wrk/zap-baseline-report.xml || true
+                                    -J zap-baseline-report.json \
+                                    -r zap-baseline-report.html \
+                                    -x zap-baseline-report.xml || true
                                 
                                 ls -la zap-reports/
                                 
