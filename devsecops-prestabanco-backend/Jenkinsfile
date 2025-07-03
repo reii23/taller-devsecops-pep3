@@ -104,57 +104,21 @@ pipeline {
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
                                 rm -f zap-reports/baseline-report.* zap-reports/zap-*.html zap-reports/zap-*.json zap-reports/zap-*.xml
                                 
-                                echo "=== Ejecutando ZAP Baseline Scan ==="
-                                docker run --name owasp-zap $NETWORK_FLAG \
-                                    -v $(pwd)/zap-reports:/zap/wrk:rw \
+                                echo "Ejecutando ZAP Baseline Scan"
+                                docker run --name owasp-zap-direct $NETWORK_FLAG \
+                                    -v $(pwd)/zap-reports:/home/zap/reports:rw \
                                     --user root \
-                                    --rm ghcr.io/zaproxy/zaproxy:stable \
-                                    zap-baseline.py -t $TARGET_URL \
-                                    -J baseline-report.json \
-                                    -r baseline-report.html \
-                                    -x baseline-report.xml || true
+                                    --rm ghcr.io/zaproxy/zaproxy:stable bash -c "
+                                        cd /home/zap/reports
+                                        zap-baseline.py -t $TARGET_URL -J baseline-report.json -r baseline-report.html -x baseline-report.xml || true
+                                        echo 'ZAP Scan completado' > zap-status.txt
+                                        date >> zap-status.txt
+                                    " || true
                                 
-                                if [ -f zap-reports/baseline-report.html ]; then
-                                    echo "✅ Método 1 exitoso - Reportes generados en /zap/wrk"
-                                else
-                                    echo "⚠️  Método 1 falló - Intentando método alternativo"
-                                    docker run --name owasp-zap-manual $NETWORK_FLAG \
-                                        -v $(pwd)/zap-reports:/home/zap/reports:rw \
-                                        --user root \
-                                        --workdir /home/zap \
-                                        --rm ghcr.io/zaproxy/zaproxy:stable bash -c "
-                                            zap-baseline.py -t $TARGET_URL -J baseline-report.json -r baseline-report.html -x baseline-report.xml || true
-                                            
-                                            find /home/zap -name 'baseline-report.*' -exec cp {} /home/zap/reports/ \\;
-                                            find /home/zap -name '*report*.html' -exec cp {} /home/zap/reports/ \\;
-                                            find /home/zap -name '*report*.json' -exec cp {} /home/zap/reports/ \\;
-                                            find /home/zap -name '*report*.xml' -exec cp {} /home/zap/reports/ \\;
-                                            
-                                            echo '=== Archivos en /home/zap/reports después de copia ==='
-                                            ls -la /home/zap/reports/
-                                            
-                                            echo 'ZAP Manual Scan completado' > /home/zap/reports/zap-manual.txt
-                                            date > /home/zap/reports/zap-timestamp.txt
-                                        " || true
-                                fi
-                                
-                                if [ ! -f zap-reports/baseline-report.html ] && [ ! -f zap-reports/simple-report.html ]; then
-                                    echo "=== Método de respaldo: ZAP Simple Scan ==="
-                                    docker run --name owasp-zap-simple $NETWORK_FLAG \
-                                        -v $(pwd)/zap-reports:/tmp/reports:rw \
-                                        --user root \
-                                        --rm ghcr.io/zaproxy/zaproxy:stable bash -c "
-                                            zap.sh -cmd -port 8080 -quickurl $TARGET_URL -quickout /tmp/reports/simple-report.html || true
-                                            echo 'ZAP Simple Scan completado' > /tmp/reports/zap-simple.txt
-                                        " || true
-                                fi
-                                
-                                echo "=== Archivos encontrados después del escaneo ==="
                                 find zap-reports/ -type f -ls
                                 
-                                echo "Análisis OWASP ZAP finalizado - $(date)" > zap-reports/zap-status.txt
+                                echo "Análisis OWASP ZAP finalizado - $(date)" >> zap-reports/zap-status.txt
                                 echo "Target URL: $TARGET_URL" >> zap-reports/zap-status.txt
-                                echo "Archivos generados:" >> zap-reports/zap-status.txt
                                 ls -la zap-reports/ >> zap-reports/zap-status.txt
                             else
                                 echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
