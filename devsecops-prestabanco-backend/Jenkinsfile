@@ -107,20 +107,34 @@ pipeline {
                                     --user root \
                                     --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
                                     -t "$TARGET_URL" \
+                                    -g gen.conf \
                                     -J zap-baseline-report.json \
                                     -r zap-baseline-report.html \
                                     -x zap-baseline-report.xml || true
                                 
+                                docker run --name owasp-zap-alt $NETWORK_FLAG \
+                                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                                    --user root \
+                                    --rm ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+                                    -t "$TARGET_URL" \
+                                    -J zap-full-report.json \
+                                    -r zap-full-report.html \
+                                    -x zap-full-report.xml \
+                                    -m 1 || true
+                                
                                 ls -la zap-reports/
                                 
-                                if [ ! -f zap-reports/zap-baseline-report.html ]; then
-                                    echo "Archivo HTML no encontrado" > zap-reports/zap-missing-html.txt
+                                echo "=== Archivos en zap-reports después del escaneo ==="
+                                find zap-reports/ -type f -ls
+                                
+                                if [ ! -f zap-reports/zap-baseline-report.html ] && [ ! -f zap-reports/zap-full-report.html ]; then
+                                    echo "No se generaron reportes HTML" > zap-reports/zap-missing-html.txt
                                 fi
-                                if [ ! -f zap-reports/zap-baseline-report.json ]; then
-                                    echo "Archivo JSON no encontrado" > zap-reports/zap-missing-json.txt
+                                if [ ! -f zap-reports/zap-baseline-report.json ] && [ ! -f zap-reports/zap-full-report.json ]; then
+                                    echo "No se generaron reportes JSON" > zap-reports/zap-missing-json.txt
                                 fi
-                                if [ ! -f zap-reports/zap-baseline-report.xml ]; then
-                                    echo "Archivo XML no encontrado" > zap-reports/zap-missing-xml.txt
+                                if [ ! -f zap-reports/zap-baseline-report.xml ] && [ ! -f zap-reports/zap-full-report.xml ]; then
+                                    echo "No se generaron reportes XML" > zap-reports/zap-missing-xml.txt
                                 fi
                             else
                                 echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
