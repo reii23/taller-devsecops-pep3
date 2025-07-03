@@ -102,19 +102,15 @@ pipeline {
                             fi
                             
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
-                                TEMP_DIR=$(mktemp -d)
-                                chmod 777 "$TEMP_DIR"
-                            
+                                # Ejecutar ZAP directamente en el directorio de trabajo
                                 docker run --name owasp-zap $NETWORK_FLAG \
-                                    -v "$TEMP_DIR":/zap/wrk/:rw \
+                                    -v $(pwd)/zap-reports:/zap/wrk/:rw \
+                                    --user $(id -u):$(id -g) \
                                     --rm ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
                                     -t "$TARGET_URL" \
                                     -J zap-baseline-report.json \
                                     -r zap-baseline-report.html \
                                     -x zap-baseline-report.xml || true
-                                
-                                cp "$TEMP_DIR"/zap-baseline-report.* zap-reports/ 2>/dev/null || true
-                                rm -rf "$TEMP_DIR"
                             else
                                 echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
                             fi
