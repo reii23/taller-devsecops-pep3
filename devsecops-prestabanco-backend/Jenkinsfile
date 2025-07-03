@@ -1,14 +1,7 @@
 pipeline {
     agent any
-    too        stage("Static Analysis") {
-            steps {
-                dir('devsecops-prestabanco-backend') {
-                    withSonarQubeEnv("sonarqube") {
-                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=PrestaBanco-Backend -Dsonar.projectName='PrestaBanco Backend' -Dsonar.token=${SONAR_AUTH_TOKEN}"
-                    }
-                }
-            }
-        }     maven 'mvn'
+    tools {
+        maven 'mvn'
         jdk 'jdk21'
     }
     stages {
@@ -43,7 +36,7 @@ pipeline {
             steps {
                 dir('devsecops-prestabanco-backend') {
                     withSonarQubeEnv("sonarqube") {
-                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=PrestaBanco-Backend -Dsonar.projectName='PrestaBanco Backend'"
+                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=PrestaBanco-Backend -Dsonar.projectName='PrestaBanco Backend' -Dsonar.token=\${SONAR_AUTH_TOKEN}"
                     }
                 }
             }
