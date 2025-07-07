@@ -44,8 +44,39 @@ pipeline {
         stage("GitLeaks Secret Scan") {
             steps {
                 dir('devsecops-prestabanco-backend') {
-                    sh 'gitleaks detect --source . --report-format json --report-path gitleaks-report.json --verbose || true'
-                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+                    script {
+                        sh '''
+                            if ! command -v gitleaks &> /dev/null; then
+                                curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /tmp
+                                cp /tmp/gitleaks ./gitleaks
+                                chmod +x ./gitleaks
+                            fi
+                        '''
+                        
+                        sh '''
+                            GITLEAKS_CMD="gitleaks"
+                            if [ ! -x "$(command -v gitleaks)" ]; then
+                                GITLEAKS_CMD="./gitleaks"
+                            fi
+                            
+                            $GITLEAKS_CMD detect --source . --report-format json --report-path gitleaks-report.json --verbose || true
+                            $GITLEAKS_CMD detect --source . --report-format sarif --report-path gitleaks-report.sarif --verbose || true
+                        '''
+                        
+                        archiveArtifacts artifacts: 'gitleaks-report.*', allowEmptyArchive: true
+                        
+                        script {
+                            def reportExists = fileExists('gitleaks-report.json')
+                            if (reportExists) {
+                                def reportContent = readFile('gitleaks-report.json')
+                                if (reportContent.trim() != "null" && reportContent.trim() != "[]") {
+                                    echo "GitLeaks found potential secrets!"
+                                } else {
+                                    echo "No secrets detected"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
