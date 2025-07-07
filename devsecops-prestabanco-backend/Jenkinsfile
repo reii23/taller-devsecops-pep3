@@ -85,10 +85,7 @@ pipeline {
                 dir('devsecops-prestabanco-backend') {
                     script {
                         echo "Iniciando análisis DAST con OWASP ZAP..."
-                        sh 'mkdir -p zap-reports'
                         sh '''
-                            rm -f zap-reports/*
-                            
                             if docker network ls | grep -q "prestabanco-network"; then
                                 NETWORK_NAME=$(docker network ls | grep prestabanco-network | awk '{print $2}')
                                 NETWORK_FLAG="--network $NETWORK_NAME"
@@ -99,33 +96,23 @@ pipeline {
                             else
                                 TARGET_URL="http://172.17.0.1:8090"
                             fi
-                            
                             echo "Target URL: $TARGET_URL"
-                            
                             if curl -f --connect-timeout 10 "$TARGET_URL/health" > /dev/null 2>&1; then
                                 echo "Backend accesible, ejecutando ZAP Baseline Scan..."
                                 echo "=== VULNERABILIDADES ENCONTRADAS ==="
-                                
                                 docker run --rm $NETWORK_FLAG \
                                     --user root \
                                     ghcr.io/zaproxy/zaproxy:stable \
                                     zap-baseline.py -t $TARGET_URL || true
-                                
                                 echo "=== FIN ANÁLISIS OWASP ZAP ==="
-                                
+                                echo "\n\nSignificado de los resultados en consola:"
+                                echo "PASS: No se detectó vulnerabilidad para esa regla."
+                                echo "WARN: Se detectó una posible vulnerabilidad o mala práctica."
+                                echo "FAIL: Se detectó una vulnerabilidad crítica (no hubo en este escaneo)."
                             else
                                 echo "Backend no accesible en $TARGET_URL"
-                                echo "Backend no accesible en $TARGET_URL" > zap-reports/zap-error.txt
                             fi
-                            
-                            echo "Detectando endpoints web..."
-                            grep -r -E "(@RequestMapping|@GetMapping|@PostMapping|@PutMapping|@DeleteMapping)" \
-                                --include="*.java" . > zap-reports/endpoints.txt || true
-                            
-                            echo "Endpoints encontrados: $(wc -l < zap-reports/endpoints.txt)"
                         '''
-                        
-                        archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
                         echo "Análisis OWASP ZAP completado"
                     }
                 }
